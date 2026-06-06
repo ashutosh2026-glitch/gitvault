@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GitVault — GitHub Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050810;
+    --bg2: #090d1a;
+    --bg3: #0d1526;
+    --surface: #111827;
+    --border: #1e2d47;
+    --border2: #243654;
+    --accent: #00d4ff;
+    --accent2: #7c3aed;
+    --accent3: #10b981;
+    --warn: #f59e0b;
+    --danger: #ef4444;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #475569;
+    --glow: 0 0 20px rgba(0,212,255,0.3);
+    --glow2: 0 0 40px rgba(0,212,255,0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background Grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    top: -50%;
+    left: -20%;
+    width: 60%;
+    height: 80%;
+    background: radial-gradient(ellipse, rgba(124,58,237,0.08) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 20px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  header {
+    padding: 28px 20px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    max-width: 1100px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+  }
+
+  .logo-icon {
+    width: 38px;
+    height: 38px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: var(--glow);
+  }
+
+  .logo-text {
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #fff, var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.5px;
+  }
+
+  .logo-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    background: rgba(0,212,255,0.1);
+    color: var(--accent);
+    border: 1px solid rgba(0,212,255,0.25);
+    padding: 2px 7px;
+    border-radius: 30px;
+    letter-spacing: 1px;
+  }
+
+  /* Hero Section */
+  .hero {
+    padding: 60px 20px 50px;
+    text-align: center;
+    max-width: 1100px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    background: rgba(0,212,255,0.07);
+    border: 1px solid rgba(0,212,255,0.2);
+    padding: 5px 14px;
+    border-radius: 30px;
+    margin-bottom: 24px;
+    letter-spacing: 2px;
+  }
+
+  .hero-tag::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+
+  .hero h1 {
+    font-size: clamp(32px, 6vw, 58px);
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 16px;
+    letter-spacing: -1px;
+  }
+
+  .hero h1 span {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero p {
+    font-size: 16px;
+    color: var(--text2);
+    max-width: 480px;
+    margin: 0 auto 36px;
+    line-height: 1.7;
+    font-weight: 400;
+  }
+
+  /* Search Bar */
+  .search-wrap {
+    display: flex;
+    gap: 0;
+    max-width: 560px;
+    margin: 0 auto;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+
+  .search-wrap:focus-within {
+    border-color: var(--accent);
+    box-shadow: var(--glow2);
+  }
+
+  .search-prefix {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    color: var(--text3);
+    padding: 0 6px 0 18px;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    border-right: 1px solid var(--border);
+    margin: 10px 0;
+  }
+
+  #usernameInput {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    padding: 16px 14px;
+  }
+
+  #usernameInput::placeholder { color: var(--text3); }
+
+  .search-btn {
+    background: linear-gradient(135deg, var(--accent), #0099bb);
+    border: none;
+    color: #000;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 0 24px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+
+  .search-btn:hover { opacity: 0.85; }
+  .search-btn:active { transform: scale(0.97); }
+
+  .quick-links {
+    margin-top: 16px;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .quick-link {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 4px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .quick-link:hover {
+    color: var(--accent);
+    border-color: rgba(0,212,255,0.3);
+    background: rgba(0,212,255,0.05);
+  }
+
+  /* Loading */
+  .loader {
+    display: none;
+    text-align: center;
+    padding: 60px 20px;
+  }
+
+  .loader.active { display: block; }
+
+  .loader-ring {
+    width: 50px;
+    height: 50px;
+    border: 2px solid var(--border2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loader p {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text3);
+    letter-spacing: 1px;
+  }
+
+  /* Error */
+  .error-box {
+    display: none;
+    background: rgba(239,68,68,0.05);
+    border: 1px solid rgba(239,68,68,0.2);
+    border-radius: 12px;
+    padding: 20px 24px;
+    max-width: 560px;
+    margin: 20px auto;
+    text-align: center;
+    color: #fca5a5;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+  }
+
+  .error-box.active { display: block; }
+
+  /* Results */
+  #results { display: none; }
+  #results.active { display: block; }
+
+  /* Profile Card */
+  .profile-card {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    padding: 32px;
+    margin-bottom: 32px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 28px;
+    position: relative;
+    overflow: hidden;
+    animation: slideUp 0.4s ease;
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .profile-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent2), var(--accent), transparent);
+  }
+
+  .avatar-wrap {
+    position: relative;
+  }
+
+  .avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 18px;
+    border: 2px solid var(--border2);
+    display: block;
+    transition: transform 0.3s;
+    object-fit: cover;
+  }
+
+  .avatar:hover { transform: scale(1.05); }
+
+  .avatar-glow {
+    position: absolute;
+    inset: -4px;
+    border-radius: 22px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    opacity: 0.2;
+    filter: blur(8px);
+    z-index: -1;
+  }
+
+  .profile-info h2 {
+    font-size: 24px;
+    font-weight: 800;
+    margin-bottom: 4px;
+    letter-spacing: -0.5px;
+  }
+
+  .profile-login {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+
+  .profile-bio {
+    font-size: 14px;
+    color: var(--text2);
+    line-height: 1.6;
+    margin-bottom: 16px;
+    max-width: 600px;
+  }
+
+  .profile-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text2);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .meta-item .icon { font-size: 14px; }
+
+  .profile-stats {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    text-align: center;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 18px;
+    min-width: 80px;
+    transition: border-color 0.2s;
+  }
+
+  .stat:hover { border-color: var(--accent); }
+
+  .stat-num {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    display: block;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+
+  .profile-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 18px;
+    border-radius: 8px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+    border: none;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+  }
+
+  .btn-primary:hover { opacity: 0.85; transform: translateY(-1px); }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--text2);
+    border: 1px solid var(--border2);
+  }
+
+  .btn-outline:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Section Header */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    gap: 12px;
+  }
+
+  .section-title {
+    font-size: 18px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    background: rgba(0,212,255,0.1);
+    color: var(--accent);
+    border: 1px solid rgba(0,212,255,0.2);
+    padding: 2px 10px;
+    border-radius: 20px;
+  }
+
+  /* Filter Tabs */
+  .filter-tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .tab {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text3);
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+
+  .tab.active {
+    background: rgba(0,212,255,0.1);
+    border-color: rgba(0,212,255,0.3);
+    color: var(--accent);
+  }
+
+  .tab:hover:not(.active) {
+    color: var(--text);
+    border-color: var(--border2);
+  }
+
+  /* Repo Grid */
+  #repoGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+
+  .repo-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    transition: all 0.25s;
+    cursor: pointer;
+    text-decoration: none;
+    display: block;
+    animation: fadeIn 0.3s ease both;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .repo-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent 60%, rgba(0,212,255,0.02));
+    pointer-events: none;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .repo-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 4px 24px rgba(0,212,255,0.1);
+    transform: translateY(-2px);
+  }
+
+  .repo-card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    gap: 8px;
+  }
+
+  .repo-name {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    word-break: break-all;
+    line-height: 1.3;
+  }
+
+  .repo-fork-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    background: rgba(124,58,237,0.1);
+    color: #a78bfa;
+    border: 1px solid rgba(124,58,237,0.2);
+    padding: 2px 7px;
+    border-radius: 10px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .repo-desc {
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.5;
+    margin-bottom: 14px;
+    min-height: 36px;
+  }
+
+  .repo-footer {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .repo-lang {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--text2);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .lang-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .repo-meta {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+  }
+
+  .repo-topic {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    background: rgba(16,185,129,0.07);
+    color: var(--accent3);
+    border: 1px solid rgba(16,185,129,0.15);
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+
+  /* Sort Bar */
+  .sort-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .sort-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 1px;
+  }
+
+  /* Load More */
+  #loadMore {
+    display: none;
+    margin: 28px auto 0;
+    padding: 12px 32px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: fit-content;
+  }
+
+  #loadMore:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Language Chart */
+  .lang-chart {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    margin-top: 16px;
+    animation: slideUp 0.5s ease;
+  }
+
+  .lang-bars {
+    display: flex;
+    border-radius: 6px;
+    overflow: hidden;
+    height: 8px;
+    margin-bottom: 16px;
+    gap: 2px;
+  }
+
+  .lang-bar-seg {
+    transition: flex 0.5s ease;
+    border-radius: 3px;
+  }
+
+  .lang-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .lang-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text2);
+  }
+
+  /* Footer */
+  footer {
+    margin-top: 80px;
+    padding: 30px 20px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  footer p {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 1px;
+  }
+
+  footer a { color: var(--accent); text-decoration: none; }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .profile-card {
+      grid-template-columns: 1fr;
+    }
+
+    .avatar-wrap {
+      display: flex;
+      justify-content: center;
+    }
+
+    #repoGrid {
+      grid-template-columns: 1fr;
+    }
+
+    .section-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+
+  /* Scroll bar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+  /* Utility */
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">⬡</div>
+    <span class="logo-text">GitVault</span>
+    <span class="logo-badge">EXPLORER</span>
+  </div>
+  <a href="https://github.com" target="_blank" class="btn btn-outline" style="font-size:12px; padding:7px 14px;">
+    ↗ GitHub
+  </a>
+</header>
+
+<div class="hero">
+  <div class="hero-tag">GITHUB API POWERED</div>
+  <h1>Explore Any<br><span>GitHub Profile</span></h1>
+  <p>Search any GitHub user to instantly see their repositories, stats, languages, and activity — all in one beautiful dashboard.</p>
+
+  <div class="search-wrap">
+    <span class="search-prefix">github.com /</span>
+    <input type="text" id="usernameInput" placeholder="username" autocomplete="off" spellcheck="false">
+    <button class="search-btn" onclick="searchUser()">EXPLORE →</button>
+  </div>
+
+  <div class="quick-links">
+    <span>Try:</span>
+    <span class="quick-link" onclick="loadUser('torvalds')">torvalds</span>
+    <span class="quick-link" onclick="loadUser('sindresorhus')">sindresorhus</span>
+    <span class="quick-link" onclick="loadUser('gaearon')">gaearon</span>
+    <span class="quick-link" onclick="loadUser('tj')">tj</span>
+    <span class="quick-link" onclick="loadUser('nickel-lang')">nickel-lang</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Loader -->
+  <div class="loader" id="loader">
+    <div class="loader-ring"></div>
+    <p>FETCHING DATA...</p>
+  </div>
+
+  <!-- Error -->
+  <div class="error-box" id="errorBox"></div>
+
+  <!-- Results -->
+  <div id="results">
+
+    <!-- Profile Card -->
+    <div class="profile-card" id="profileCard"></div>
+
+    <!-- Language Distribution -->
+    <div id="langSection"></div>
+
+    <!-- Repos -->
+    <div style="margin-top: 32px;">
+      <div class="section-header">
+        <div class="section-title">
+          📦 Repositories
+          <span class="section-count" id="repoCount">0</span>
+        </div>
+        <div class="sort-bar">
+          <span class="sort-label">SORT:</span>
+          <button class="tab active" onclick="sortRepos('stars', this)">⭐ Stars</button>
+          <button class="tab" onclick="sortRepos('updated', this)">🕐 Recent</button>
+          <button class="tab" onclick="sortRepos('forks', this)">🍴 Forks</button>
+          <button class="tab" onclick="sortRepos('name', this)">🔤 Name</button>
+        </div>
+      </div>
+
+      <div class="filter-tabs" id="langFilter" style="margin-bottom:16px;"></div>
+
+      <div id="repoGrid"></div>
+      <button id="loadMore" onclick="showMoreRepos()">Load More Repos</button>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  <p>GitVault — Powered by <a href="https://docs.github.com/en/rest" target="_blank">GitHub REST API</a> &nbsp;|&nbsp; No auth required &nbsp;|&nbsp; Rate limit: 60 req/hr</p>
+</footer>
+
+<script>
+  const LANG_COLORS = {
+    JavaScript:'#f1e05a', TypeScript:'#3178c6', Python:'#3572A5',
+    Java:'#b07219', Go:'#00ADD8', Rust:'#dea584', 'C++':'#f34b7d',
+    C:'#555555', 'C#':'#178600', HTML:'#e34c26', CSS:'#563d7c',
+    Vue:'#41b883', PHP:'#4F5D95', Ruby:'#701516', Swift:'#FA7343',
+    Kotlin:'#A97BFF', Dart:'#00B4AB', Shell:'#89e051', Scala:'#c22d40',
+    Haskell:'#5e5086', R:'#198ce7', MATLAB:'#e16737', Lua:'#000080',
+    Perl:'#0298c3', Clojure:'#db5855', Elixir:'#6e4a7e', Zig:'#ec915c',
+    Nix:'#7e7eff', Vim:'#199f4b', Default:'#8b949e'
+  };
+
+  let allRepos = [];
+  let filteredRepos = [];
+  let displayCount = 12;
+  let currentSort = 'stars';
+  let currentLangFilter = 'All';
+
+  function getLangColor(lang) {
+    return LANG_COLORS[lang] || LANG_COLORS.Default;
+  }
+
+  function formatNumber(n) {
+    if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
+    return n;
+  }
+
+  function timeAgo(dateStr) {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diff = (now - d) / 1000;
+    if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+    if (diff < 2592000) return Math.floor(diff / 86400) + 'd ago';
+    if (diff < 31536000) return Math.floor(diff / 2592000) + 'mo ago';
+    return Math.floor(diff / 31536000) + 'yr ago';
+  }
+
+  function searchUser() {
+    const val = document.getElementById('usernameInput').value.trim();
+    if (val) loadUser(val);
+  }
+
+  document.getElementById('usernameInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') searchUser();
+  });
+
+  async function loadUser(username) {
+    document.getElementById('usernameInput').value = username;
+    showLoader();
+    hideError();
+    hideResults();
+    displayCount = 12;
+    currentLangFilter = 'All';
+
+    try {
+      const [userRes, reposRes] = await Promise.all([
+        fetch(`https://api.github.com/users/${username}`),
+        fetch(`https://api.github.com/users/${username}/repos?per_page=100&sort=updated`)
+      ]);
+
+      if (!userRes.ok) {
+        if (userRes.status === 404) throw new Error(`User "${username}" not found on GitHub`);
+        if (userRes.status === 403) throw new Error('Rate limit exceeded. Please wait a moment.');
+        throw new Error('GitHub API error: ' + userRes.status);
+      }
+
+      const user = await userRes.json();
+      const repos = reposRes.ok ? await reposRes.json() : [];
+
+      allRepos = repos.filter(r => !r.fork);
+      renderProfile(user);
+      renderLangChart(repos);
+      renderRepos();
+      showResults();
+    } catch (e) {
+      showError(e.message);
+    } finally {
+      hideLoader();
+    }
+  }
+
+  function renderProfile(u) {
+    const joinYear = new Date(u.created_at).getFullYear();
+    document.getElementById('profileCard').innerHTML = `
+      <div class="avatar-wrap">
+        <img class="avatar" src="${u.avatar_url}" alt="${u.login}" loading="lazy">
+        <div class="avatar-glow"></div>
+      </div>
+      <div class="profile-info">
+        <h2>${u.name || u.login}</h2>
+        <div class="profile-login">@${u.login}</div>
+        ${u.bio ? `<div class="profile-bio">${u.bio}</div>` : ''}
+        <div class="profile-meta">
+          ${u.location ? `<span class="meta-item"><span class="icon">📍</span>${u.location}</span>` : ''}
+          ${u.company ? `<span class="meta-item"><span class="icon">🏢</span>${u.company}</span>` : ''}
+          ${u.blog ? `<span class="meta-item"><span class="icon">🔗</span><a href="${u.blog.startsWith('http') ? u.blog : 'https://'+u.blog}" target="_blank" style="color:var(--accent); text-decoration:none;">${u.blog}</a></span>` : ''}
+          <span class="meta-item"><span class="icon">📅</span>Joined ${joinYear}</span>
+        </div>
+        <div class="profile-stats">
+          <div class="stat"><span class="stat-num">${formatNumber(u.public_repos)}</span><span class="stat-label">REPOS</span></div>
+          <div class="stat"><span class="stat-num">${formatNumber(u.followers)}</span><span class="stat-label">FOLLOWERS</span></div>
+          <div class="stat"><span class="stat-num">${formatNumber(u.following)}</span><span class="stat-label">FOLLOWING</span></div>
+          ${u.public_gists ? `<div class="stat"><span class="stat-num">${formatNumber(u.public_gists)}</span><span class="stat-label">GISTS</span></div>` : ''}
+        </div>
+        <div class="profile-actions">
+          <a href="${u.html_url}" target="_blank" class="btn btn-primary">↗ View on GitHub</a>
+          <button class="btn btn-outline" onclick="copyLink('${u.html_url}')">⎘ Copy Link</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderLangChart(repos) {
+    const langs = {};
+    repos.forEach(r => {
+      if (r.language) langs[r.language] = (langs[r.language] || 0) + 1;
+    });
+
+    if (!Object.keys(langs).length) {
+      document.getElementById('langSection').innerHTML = '';
+      return;
+    }
+
+    const sorted = Object.entries(langs).sort((a, b) => b[1] - a[1]).slice(0, 8);
+    const total = sorted.reduce((s, [, c]) => s + c, 0);
+
+    const bars = sorted.map(([lang, count]) => {
+      const pct = (count / total * 100).toFixed(1);
+      return `<div class="lang-bar-seg" style="flex:${pct}; background:${getLangColor(lang)}; min-width:4px;" title="${lang}: ${pct}%"></div>`;
+    }).join('');
+
+    const list = sorted.map(([lang, count]) => {
+      const pct = (count / total * 100).toFixed(1);
+      return `<div class="lang-item"><div class="lang-dot" style="background:${getLangColor(lang)}"></div>${lang} <span style="color:var(--text3)">${pct}%</span></div>`;
+    }).join('');
+
+    document.getElementById('langSection').innerHTML = `
+      <div class="lang-chart">
+        <div style="font-size:13px; font-weight:700; margin-bottom:14px; color:var(--text2);">🗺 Language Distribution</div>
+        <div class="lang-bars">${bars}</div>
+        <div class="lang-list">${list}</div>
+      </div>
+    `;
+
+    // Lang filter tabs
+    const langSet = [...new Set(allRepos.map(r => r.language).filter(Boolean))];
+    const tabs = ['All', ...langSet.slice(0, 8)].map(l => 
+      `<button class="tab ${l === 'All' ? 'active' : ''}" onclick="filterByLang('${l}', this)">${l === 'All' ? '🌐 All' : l}</button>`
+    ).join('');
+    document.getElementById('langFilter').innerHTML = tabs;
+  }
+
+  function sortRepos(type, btn) {
+    currentSort = type;
+    document.querySelectorAll('.sort-bar .tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    applyFiltersAndSort();
+    renderFilteredRepos();
+  }
+
+  function filterByLang(lang, btn) {
+    currentLangFilter = lang;
+    displayCount = 12;
+    document.querySelectorAll('#langFilter .tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    applyFiltersAndSort();
+    renderFilteredRepos();
+  }
+
+  function applyFiltersAndSort() {
+    let repos = currentLangFilter === 'All' ? allRepos : allRepos.filter(r => r.language === currentLangFilter);
+
+    switch(currentSort) {
+      case 'stars': repos.sort((a,b) => b.stargazers_count - a.stargazers_count); break;
+      case 'updated': repos.sort((a,b) => new Date(b.updated_at) - new Date(a.updated_at)); break;
+      case 'forks': repos.sort((a,b) => b.forks_count - a.forks_count); break;
+      case 'name': repos.sort((a,b) => a.name.localeCompare(b.name)); break;
+    }
+
+    filteredRepos = repos;
+    document.getElementById('repoCount').textContent = filteredRepos.length;
+  }
+
+  function renderRepos() {
+    applyFiltersAndSort();
+    renderFilteredRepos();
+  }
+
+  function renderFilteredRepos() {
+    const grid = document.getElementById('repoGrid');
+    const shown = filteredRepos.slice(0, displayCount);
+
+    grid.innerHTML = shown.map((r, i) => {
+      const topics = (r.topics || []).slice(0, 2).map(t => `<span class="repo-topic">${t}</span>`).join('');
+      return `
+        <a class="repo-card" href="${r.html_url}" target="_blank" style="animation-delay:${(i % 12) * 40}ms">
+          <div class="repo-card-top">
+            <div class="repo-name">${r.name}</div>
+            ${r.fork ? '<span class="repo-fork-badge">FORK</span>' : ''}
+          </div>
+          <div class="repo-desc">${r.description || '<span style="color:var(--text3);font-size:11px;font-family:JetBrains Mono,monospace">No description</span>'}</div>
+          <div class="repo-footer">
+            ${r.language ? `<span class="repo-lang"><span class="lang-dot" style="background:${getLangColor(r.language)}"></span>${r.language}</span>` : ''}
+            ${r.stargazers_count ? `<span class="repo-meta">⭐ ${formatNumber(r.stargazers_count)}</span>` : ''}
+            ${r.forks_count ? `<span class="repo-meta">🍴 ${formatNumber(r.forks_count)}</span>` : ''}
+            <span class="repo-meta" style="margin-left:auto">🕐 ${timeAgo(r.updated_at)}</span>
+            ${topics}
+          </div>
+        </a>
+      `;
+    }).join('');
+
+    const loadMoreBtn = document.getElementById('loadMore');
+    if (filteredRepos.length > displayCount) {
+      loadMoreBtn.style.display = 'block';
+      loadMoreBtn.textContent = `Load More (${filteredRepos.length - displayCount} remaining)`;
+    } else {
+      loadMoreBtn.style.display = 'none';
+    }
+  }
+
+  function showMoreRepos() {
+    displayCount += 12;
+    renderFilteredRepos();
+  }
+
+  function copyLink(url) {
+    navigator.clipboard.writeText(url).then(() => {
+      const btn = event.target;
+      btn.textContent = '✓ Copied!';
+      setTimeout(() => btn.textContent = '⎘ Copy Link', 2000);
+    });
+  }
+
+  function showLoader() { document.getElementById('loader').classList.add('active'); }
+  function hideLoader() { document.getElementById('loader').classList.remove('active'); }
+  function showResults() { document.getElementById('results').classList.add('active'); }
+  function hideResults() { document.getElementById('results').classList.remove('active'); }
+  function showError(msg) {
+    const box = document.getElementById('errorBox');
+    box.textContent = '⚠ ' + msg;
+    box.classList.add('active');
+  }
+  function hideError() { document.getElementById('errorBox').classList.remove('active'); }
+</script>
+</body>
+</html>
+
